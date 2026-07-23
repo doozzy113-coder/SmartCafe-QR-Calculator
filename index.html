@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="uk" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="description" content="Калькулятор вартості QR-меню та цифрових сервісів Smart Cafe" />
+<title>QR-меню від Smart Cafe — калькулятор</title>
+<script>
+(() => {
+  try {
+    const savedTheme = localStorage.getItem("smartCafeTheme");
+    document.documentElement.dataset.theme = savedTheme === "light" ? "light" : "dark";
+  } catch {
+    document.documentElement.dataset.theme = "dark";
+  }
+})();
+</script>
+
+<style>
+:root {
+  --bg: #f4f4f1;
+  --surface: #ffffff;
+  --surface-2: #f8f8f6;
+  --text: #202124;
+  --muted: #666a73;
+  --line: #d9dadd;
+  --line-strong: #b9bbc1;
+  --accent: #6f46d9;
+  --accent-soft: #f1edfb;
+  --success: #176b45;
+  --success-soft: #edf7f1;
+  --warning: #7b5715;
+  --warning-soft: #fbf5e8;
+  --danger: #9b2c3b;
+  --danger-soft: #fbeff1;
+  --radius: 10px;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scrollbar-width: thin; scrollbar-color: #8c8f97 #ecece8; }
+body {
+  margin: 0;
+  color: var(--text);
+  background: var(--bg);
+  font-family: Arial, Helvetica, sans-serif;
+  line-height: 1.5;
+  font-size: 16px;
+}
+body.summary-open, body.modal-open { overflow: hidden; }
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: #ecece8; }
+*::-webkit-scrollbar-thumb { background: #9a9da5; border: 2px solid #ecece8; border-radius: 8px; }
+a { color: inherit; }
+button, input, select, textarea { font: inherit; }
+button { -webkit-tap-highlight-color: transparent; }
+.container { width: min(1220px, calc(100% - 32px)); margin: 0 auto; }
+header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: rgba(255,255,255,.96);
+  border-bottom: 1px solid var(--line);
+  backdrop-filter: blur(10px);
+}
+.nav { min-height: 64px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.brand { display: flex; align-items: center; gap: 11px; font-weight: 700; }
+.brand-mark {
+  width: 34px; height: 34px; display: grid; place-items: center;
+  border: 1px solid var(--text); border-radius: 8px; font-size: 13px; text-transform: uppercase;
+}
+.nav-links { display: flex; gap: 22px; color: var(--muted); font-size: 14px; }
+.nav-links a { text-decoration: none; }
+.nav-links a:hover { color: var(--text); }
+.hero { padding: 48px 0 28px; }
+.hero-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(300px, .75fr); gap: 36px; align-items: end; }
+h1 { margin: 0 0 16px; max-width: 760px; font-size: clamp(36px, 5vw, 58px); line-height: 1.05; letter-spacing: -.035em; }
+.hero p { margin: 0; max-width: 700px; color: var(--muted); font-size: 18px; }
+.hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+.hero-card { border-top: 2px solid var(--text); border-bottom: 1px solid var(--line); }
+.hero-stat { display: grid; grid-template-columns: 1fr; gap: 2px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.hero-stat:last-child { border-bottom: 0; }
+.hero-stat b { font-size: 20px; }
+.hero-stat span { color: var(--muted); font-size: 14px; }
+.button {
+  min-height: 44px; padding: 0 16px; border: 1px solid transparent; border-radius: 8px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  font-weight: 700; text-decoration: none; cursor: pointer;
+  transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+.button-primary { background: var(--accent); color: white; }
+.button-primary:hover { background: #5e36c7; }
+.button-secondary { background: white; color: var(--text); border-color: var(--line-strong); }
+.button-secondary:hover { border-color: var(--text); }
+.button-ghost { background: transparent; color: var(--muted); border-color: var(--line); }
+.button-ghost:hover { color: var(--text); border-color: var(--line-strong); }
+section { padding: 34px 0; }
+.section-title { margin-bottom: 18px; }
+.section-title h2 { margin: 0 0 6px; font-size: clamp(27px, 3.5vw, 38px); letter-spacing: -.025em; }
+.section-title p { margin: 0; max-width: 820px; color: var(--muted); }
+.calculator-layout { display: grid; grid-template-columns: minmax(0, 1fr) 390px; gap: 22px; align-items: start; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+.form-panel { padding: 24px; }
+.form-section { padding: 0 0 26px; margin-bottom: 26px; border-bottom: 1px solid var(--line); }
+.form-section:last-child { padding-bottom: 0; margin-bottom: 0; border-bottom: 0; }
+.form-section h3 { margin: 0 0 6px; font-size: 21px; }
+.form-section > p { margin: 0 0 17px; color: var(--muted); font-size: 14px; }
+.section-index { color: var(--accent); }
+.grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 14px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 14px; }
+.field { min-width: 0; display: flex; flex-direction: column; gap: 7px; }
+.field label { display: flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 700; }
+.field small { color: var(--muted); font-size: 13px; }
+input[type="text"], input[type="number"], select, textarea {
+  width: 100%; min-height: 44px; padding: 10px 12px;
+  color: var(--text); background: white; border: 1px solid var(--line-strong); border-radius: 8px; outline: none;
+}
+textarea { min-height: 106px; resize: vertical; }
+input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(111,70,217,.12); }
+input[type="number"] { -moz-appearance: textfield; }
+input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+select { appearance: none; padding-right: 38px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%23666a73' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m7 10 5 5 5-5'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 11px center; }
+.number-control { display: grid; grid-template-columns: 38px minmax(0,1fr) 38px; border: 1px solid var(--line-strong); border-radius: 8px; overflow: hidden; background: white; }
+.number-control:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(111,70,217,.12); }
+.number-control input { border: 0; border-radius: 0; text-align: center; box-shadow: none; }
+.step-button { border: 0; background: var(--surface-2); color: var(--text); cursor: pointer; font-size: 19px; }
+.step-button:hover { background: #ebebe7; }
+.mode-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+.mode-card {
+  position: relative; min-height: 142px; padding: 16px 44px 16px 16px; display: flex; gap: 12px;
+  border: 1px solid var(--line-strong); border-radius: 9px; background: white; cursor: pointer;
+}
+.mode-card:has(input:checked) { border: 2px solid var(--accent); padding: 15px 43px 15px 15px; background: var(--accent-soft); }
+.mode-card input { position: absolute; opacity: 0; pointer-events: none; }
+.mode-check { width: 21px; height: 21px; flex: 0 0 auto; margin-top: 2px; border: 2px solid var(--line-strong); border-radius: 50%; display: grid; place-items: center; background: white; }
+.mode-card:has(input:checked) .mode-check { border-color: var(--accent); }
+.mode-card:has(input:checked) .mode-check::after { content: ""; width: 9px; height: 9px; border-radius: 50%; background: var(--accent); }
+.mode-content { display: flex; flex-direction: column; gap: 4px; }
+.mode-content strong { font-size: 19px; }
+.mode-content > span { font-size: 14px; color: var(--muted); font-weight: 700; }
+.mode-content small { color: var(--muted); font-size: 13px; }
+.mode-kicker { color: var(--accent) !important; font-size: 12px !important; text-transform: none; }
+.info-trigger {
+  width: 25px; height: 25px; padding: 0; display: grid; place-items: center;
+  border: 1px solid var(--line-strong); border-radius: 50%; background: white; color: var(--muted);
+  font-size: 13px; font-weight: 700; cursor: pointer;
+}
+.mode-card > .info-trigger, .choice > .info-trigger { position: absolute; top: 11px; right: 11px; }
+.info-trigger:hover { color: var(--accent); border-color: var(--accent); }
+.lite-information { margin-top: 14px; padding: 17px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface-2); }
+.lite-price-line { display: flex; align-items: end; justify-content: space-between; gap: 18px; padding-bottom: 15px; border-bottom: 1px solid var(--line); }
+.lite-price-line span { color: var(--muted); font-size: 13px; }
+.lite-price-line b { display: block; margin-top: 2px; font-size: 24px; }
+.lite-id-field { width: min(220px,100%); }
+.lite-lists { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; margin: 15px 0; }
+.lite-list h4 { margin: 0 0 7px; font-size: 15px; }
+.lite-list ul { margin: 0; padding-left: 20px; color: var(--muted); font-size: 14px; }
+.feature-groups, .payment-groups { display: grid; gap: 18px; }
+.feature-group, .payment-group { padding-top: 4px; }
+.feature-group + .feature-group, .payment-group + .payment-group { padding-top: 20px; border-top: 1px solid var(--line); }
+.feature-group-head { display: flex; justify-content: space-between; gap: 18px; align-items: start; margin-bottom: 12px; }
+.feature-group-head h4, .payment-group h4 { margin: 0 0 4px; font-size: 17px; }
+.feature-group-head p, .payment-group > p { margin: 0; color: var(--muted); font-size: 13px; }
+.tier-note { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.choice-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+.choice {
+  position: relative; min-height: 74px; padding: 13px 42px 13px 13px; display: flex; gap: 10px;
+  border: 1px solid var(--line); border-radius: 8px; background: white; cursor: pointer;
+}
+.choice:hover { border-color: var(--line-strong); }
+.choice:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.choice input { margin-top: 3px; accent-color: var(--accent); }
+.choice strong { display: block; font-size: 14px; }
+.choice span span { display: block; margin-top: 2px; color: var(--muted); font-size: 13px; }
+.marketplace-block { margin: 12px 0 16px; padding: 15px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); }
+.marketplace-block h5 { margin: 0 0 4px; font-size: 15px; }
+.marketplace-block > p { margin: 0 0 13px; color: var(--muted); font-size: 13px; }
+.payment-items-grid { margin-top: 12px; }
+.website-creation-card { grid-column: 1 / -1; }
+.static-cost-note { margin: 12px 0; padding: 13px; border-left: 3px solid var(--warning); background: var(--warning-soft); font-size: 14px; }
+.static-cost-note strong { margin-right: 8px; }
+.calculated-hint { margin-top: 3px; padding: 10px 12px; border-left: 3px solid var(--success); background: var(--success-soft); color: var(--success); font-size: 13px; }
+.notice { margin-top: 12px; padding: 11px 12px; border-left: 3px solid var(--warning); background: var(--warning-soft); color: var(--warning); font-size: 13px; }
+.notice.danger { border-left-color: var(--danger); background: var(--danger-soft); color: var(--danger); }
+.notice.success { border-left-color: var(--success); background: var(--success-soft); color: var(--success); }
+textarea:disabled { opacity: .55; cursor: not-allowed; background: #efefec; }
+.summary-panel { position: sticky; top: 80px; max-height: calc(100vh - 96px); display: flex; flex-direction: column; overflow: hidden; }
+.summary-scroll { padding: 20px; overflow: auto; }
+.summary-head { padding-bottom: 15px; border-bottom: 1px solid var(--line); }
+.summary-label { color: var(--muted); font-size: 13px; }
+.plan-name { margin: 4px 0 0; font-size: 31px; letter-spacing: -.025em; }
+.plan-price { color: var(--accent); font-size: 17px; font-weight: 700; }
+.summary-total { margin: 16px 0; padding: 15px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); }
+.total-row { display: flex; justify-content: space-between; gap: 15px; align-items: baseline; }
+.total-row + .total-row { margin-top: 8px; }
+.total-row span { color: var(--muted); font-size: 13px; }
+.total-row b { font-size: 21px; }
+.report-block { padding: 13px 0; border-top: 1px solid var(--line); }
+.report-block h4 { margin: 0 0 8px; font-size: 14px; }
+.report-list, .breakdown { margin: 0; padding: 0; list-style: none; }
+.report-list li, .breakdown li { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px dotted var(--line); font-size: 13px; }
+.report-list li:last-child, .breakdown li:last-child { border-bottom: 0; }
+.report-list span:first-child, .breakdown span:first-child { color: var(--muted); }
+.service-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.service-chip { padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface-2); font-size: 12px; }
+.empty-state { color: var(--muted); font-size: 13px; }
+.comment-card { margin-top: 10px; padding: 11px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface-2); white-space: pre-wrap; font-size: 13px; }
+.money-group { margin-top: 11px; }
+.money-group-title { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 4px; font-size: 13px; font-weight: 700; }
+.summary-actions { position: sticky; bottom: 0; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; padding: 14px 20px 18px; border-top: 1px solid var(--line); background: white; }
+.summary-actions .wide { grid-column: 1 / -1; }
+.icon-button { position: absolute; top: 14px; right: 14px; width: 32px; height: 32px; border: 1px solid var(--line); border-radius: 7px; background: white; color: var(--muted); cursor: pointer; }
+.summary-panel.expanded { position: fixed; inset: 22px; z-index: 100; max-height: none; }
+.summary-backdrop { position: fixed; inset: 0; z-index: 90; background: rgba(0,0,0,.4); opacity: 0; pointer-events: none; }
+.summary-backdrop.active { opacity: 1; pointer-events: auto; }
+.tariff-cards { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px; }
+.tariff-card { padding: 17px; border: 1px solid var(--line); border-radius: 8px; background: white; }
+.tariff-card.active { border: 2px solid var(--accent); padding: 16px; }
+.tariff-card h3 { margin: 0; font-size: 18px; }
+.tariff-card .price { margin: 6px 0; font-size: 24px; font-weight: 700; }
+.tariff-card p { margin: 0; color: var(--muted); font-size: 13px; }
+.lite-tariff-overview { margin-bottom: 12px; padding: 18px; border: 1px solid var(--line-strong); border-radius: 8px; background: white; }
+.lite-tariff-overview.active { border: 2px solid var(--accent); padding: 17px; }
+.lite-overview-head { display: flex; justify-content: space-between; gap: 20px; align-items: start; }
+.lite-overview-head h3 { margin: 3px 0; font-size: 24px; }
+.lite-overview-head .price { font-size: 25px; font-weight: 700; }
+.lite-overview-head .price small { color: var(--muted); font-size: 13px; }
+.lite-limit { color: var(--muted); font-size: 13px; }
+.lite-overview-columns { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; margin-top: 13px; }
+.lite-overview-columns h4 { margin: 0 0 4px; font-size: 14px; }
+.lite-overview-columns p { margin: 0; color: var(--muted); font-size: 13px; }
+.faq { border-top: 1px solid var(--line); }
+details { border-bottom: 1px solid var(--line); background: transparent; }
+summary { padding: 15px 0; display: flex; justify-content: space-between; gap: 18px; list-style: none; cursor: pointer; font-weight: 700; }
+summary::-webkit-details-marker { display: none; }
+summary::after { content: "+"; color: var(--muted); font-size: 20px; font-weight: 400; }
+details[open] summary::after { content: "−"; }
+.faq-answer { padding: 0 0 15px; max-width: 900px; color: var(--muted); }
+.demo-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+.demo-card { min-height: 150px; padding: 18px; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid var(--line); border-radius: 8px; background: white; }
+.demo-card h3 { margin: 0 0 6px; }
+.demo-card p { margin: 0; color: var(--muted); }
+.disabled-link { opacity: .55; pointer-events: none; }
+footer { padding: 38px 0 50px; color: var(--muted); font-size: 13px; }
+.footer-inner { padding-top: 18px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 20px; }
+.hidden { display: none !important; }
+.modal-overlay { position: fixed; inset: 0; z-index: 150; display: grid; place-items: center; padding: 20px; background: rgba(32,33,36,.56); opacity: 0; pointer-events: none; transition: opacity .15s ease; }
+.modal-overlay.active { opacity: 1; pointer-events: auto; }
+.modal-dialog { width: min(560px,100%); max-height: min(720px,calc(100vh - 40px)); overflow: auto; padding: 22px; border-radius: 10px; background: white; box-shadow: 0 18px 50px rgba(0,0,0,.2); }
+.modal-head { display: flex; justify-content: space-between; gap: 18px; align-items: start; }
+.modal-kicker { color: var(--accent); font-size: 12px; font-weight: 700; }
+.modal-dialog h3 { margin: 3px 0 0; font-size: 24px; }
+.modal-close { width: 32px; height: 32px; border: 1px solid var(--line); border-radius: 7px; background: white; cursor: pointer; font-size: 20px; }
+.modal-summary { margin: 17px 0 12px; color: var(--muted); }
+.modal-list { margin: 0; padding-left: 20px; }
+.modal-list li + li { margin-top: 7px; }
+.modal-caution { margin-top: 15px; padding: 11px 12px; border-left: 3px solid var(--warning); background: var(--warning-soft); color: var(--warning); font-size: 13px; }
+.pdf-stage { position: fixed; left: -10000px; top: 0; z-index: -1; }
+.pdf-page {
+  width: 794px; height: 1123px; padding: 54px 70px 48px; position: relative; overflow: hidden;
+  background: #fff; color: #1f1f1f; font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 1.35;
+}
+.pdf-header { display: flex; justify-content: flex-end; padding-bottom: 10px; border-bottom: 1px solid #cfcfcf; color: #555; font-size: 12px; font-weight: 700; }
+.pdf-title { margin: 38px 0 4px; font-size: 32px; line-height: 1.05; letter-spacing: -.02em; }
+.pdf-subtitle { margin: 0 0 18px; color: #4a4a4a; font-size: 23px; font-weight: 700; }
+.pdf-meta { margin-bottom: 10px; color: #555; font-size: 14px; }
+.pdf-rule { height: 1px; background: #9e9e9e; margin-bottom: 22px; }
+.pdf-section { margin-top: 20px; }
+.pdf-section h2 { margin: 0 0 10px; padding-bottom: 6px; border-bottom: 1px solid #cfcfcf; font-size: 21px; }
+.pdf-section h3 { margin: 16px 0 7px; font-size: 17px; }
+.pdf-section p { margin: 0 0 8px; }
+.pdf-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+.pdf-table th, .pdf-table td { padding: 9px 10px; border: 1px solid #d0d0d0; vertical-align: top; text-align: left; }
+.pdf-table th { background: #ececec; font-weight: 700; }
+.pdf-table td:last-child, .pdf-table th:last-child { text-align: right; }
+.pdf-table .total-row-pdf td { background: #f3f3f3; font-weight: 700; }
+.pdf-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin-top: 10px; border: 1px solid #d0d0d0; }
+.pdf-two-col > div { padding: 13px; }
+.pdf-two-col > div + div { border-left: 1px solid #d0d0d0; }
+.pdf-two-col strong { display: block; margin-bottom: 5px; }
+.pdf-service-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 24px; margin: 0; padding-left: 19px; }
+.pdf-service-grid li { break-inside: avoid; }
+.pdf-note { margin-top: 12px; padding: 10px 12px; background: #f4f4f4; border-left: 3px solid #777; font-size: 12px; }
+.pdf-footer { position: absolute; left: 70px; right: 70px; bottom: 24px; display: flex; justify-content: center; color: #777; font-size: 11px; }
+.pdf-next { margin-top: 18px; }
+.pdf-sign { margin-top: 18px; color: #444; font-weight: 700; }
+@media (max-width: 980px) { .hero-grid, .calculator-layout { grid-template-columns: 1fr; } .summary-panel { position: static; max-height: none; } .summary-scroll { overflow: visible; } .tariff-cards { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media (max-width: 700px) { .nav-links { display: none; } .hero { padding-top: 34px; } .grid-2, .grid-3, .choice-grid, .mode-grid, .lite-lists, .lite-overview-columns, .demo-grid, .summary-actions { grid-template-columns: 1fr; } .tariff-cards { grid-template-columns: 1fr; } .form-panel { padding: 17px; } .website-creation-card { grid-column: auto; } .lite-price-line, .lite-overview-head, .feature-group-head, .footer-inner { flex-direction: column; align-items: stretch; } .lite-id-field { width: 100%; } .summary-panel.expanded { inset: 8px; } h1 { font-size: 39px; } }
+
+/* ---------- Theme system and visual refresh ---------- */
+:root {
+  color-scheme: light;
+  --shadow-panel: 0 16px 42px rgba(30, 32, 40, .07);
+  --shadow-floating: 0 22px 70px rgba(28, 25, 45, .14);
+  --hero-surface: linear-gradient(135deg, rgba(111,70,217,.10), rgba(255,255,255,.76) 44%, rgba(84,110,255,.06));
+  --header-bg: rgba(250,250,248,.84);
+  --input-bg: #ffffff;
+  --hover-surface: #efefec;
+  --scroll-track: #ecece8;
+  --scroll-thumb: #979aa3;
+}
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #090a0f;
+  --surface: #11131a;
+  --surface-2: #171a22;
+  --text: #f2f3f7;
+  --muted: #a5a9b5;
+  --line: #292d37;
+  --line-strong: #3c414e;
+  --accent: #9a72ff;
+  --accent-soft: rgba(154,114,255,.13);
+  --success: #8bd9b3;
+  --success-soft: rgba(64,164,117,.12);
+  --warning: #e9c46d;
+  --warning-soft: rgba(201,145,43,.12);
+  --danger: #ff9aa8;
+  --danger-soft: rgba(205,67,87,.12);
+  --shadow-panel: 0 18px 55px rgba(0,0,0,.22);
+  --shadow-floating: 0 30px 90px rgba(0,0,0,.42);
+  --hero-surface:
+    radial-gradient(circle at 8% 5%, rgba(154,114,255,.19), transparent 34%),
+    radial-gradient(circle at 94% 15%, rgba(102,79,196,.13), transparent 30%),
+    linear-gradient(145deg, rgba(23,25,34,.96), rgba(13,15,21,.98));
+  --header-bg: rgba(9,10,15,.78);
+  --input-bg: #0e1118;
+  --hover-surface: #20242d;
+  --scroll-track: #101219;
+  --scroll-thumb: #4b5060;
+}
+html[data-theme="light"] {
+  color-scheme: light;
+}
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 8% -5%, rgba(111,70,217,.10), transparent 30%),
+    radial-gradient(circle at 92% 4%, rgba(91,110,214,.07), transparent 27%),
+    var(--bg);
+  background-attachment: fixed;
+  font-family: Inter, Onest, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  transition: background-color .22s ease, color .22s ease;
+}
+html[data-theme="dark"] body {
+  background:
+    radial-gradient(circle at 10% -8%, rgba(154,114,255,.18), transparent 34%),
+    radial-gradient(circle at 94% 2%, rgba(78,64,155,.13), transparent 28%),
+    linear-gradient(180deg, #090a0f 0%, #0b0d13 52%, #090a0f 100%);
+}
+
+header {
+  background: var(--header-bg);
+  border-bottom-color: color-mix(in srgb, var(--line) 82%, transparent);
+  backdrop-filter: blur(18px) saturate(125%);
+}
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.theme-toggle {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  color: var(--text);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  cursor: pointer;
+  transition: transform .16s ease, border-color .16s ease, background .16s ease;
+}
+.theme-toggle:hover {
+  transform: translateY(-1px);
+  border-color: var(--accent);
+  background: var(--surface-2);
+}
+.theme-toggle:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent) 26%, transparent);
+  outline-offset: 2px;
+}
+.theme-toggle-icon {
+  font-size: 19px;
+  line-height: 1;
+}
+.brand-mark {
+  color: white;
+  border: 0;
+  border-radius: 10px;
+  background: linear-gradient(145deg, #8f62f2, #6f46d9);
+  box-shadow: 0 8px 24px rgba(111,70,217,.24);
+}
+
+.hero {
+  padding-top: 42px;
+}
+.hero-grid {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: clamp(26px, 4vw, 42px);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: var(--hero-surface);
+  box-shadow: var(--shadow-panel);
+}
+.hero-grid::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  width: 260px;
+  height: 260px;
+  right: -130px;
+  bottom: -150px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  filter: blur(4px);
+}
+.hero-card {
+  padding-left: 22px;
+  border-top: 0;
+  border-bottom: 0;
+  border-left: 1px solid var(--line);
+}
+.hero-stat:first-child {
+  padding-top: 0;
+}
+.hero-stat:last-child {
+  padding-bottom: 0;
+}
+
+.panel,
+.tariff-card,
+.lite-tariff-overview,
+.demo-card {
+  box-shadow: var(--shadow-panel);
+}
+.panel {
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface) 96%, transparent);
+}
+.form-panel {
+  padding: 28px;
+}
+.summary-panel {
+  backdrop-filter: blur(12px);
+}
+.summary-total {
+  border-radius: 12px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--accent) 12%, var(--surface-2)), var(--surface-2));
+}
+.mode-card,
+.choice,
+.tariff-card,
+.lite-tariff-overview,
+.demo-card,
+.info-trigger,
+.icon-button,
+.modal-dialog,
+.modal-close,
+.button-secondary,
+.summary-actions {
+  background: var(--surface);
+}
+.mode-card,
+.choice,
+.tariff-card,
+.lite-tariff-overview,
+.demo-card {
+  transition: transform .16s ease, border-color .16s ease, background .16s ease, box-shadow .16s ease;
+}
+.mode-card:hover,
+.choice:hover,
+.tariff-card:hover,
+.demo-card:hover {
+  transform: translateY(-1px);
+  border-color: var(--line-strong);
+}
+.mode-card:has(input:checked),
+.choice:has(input:checked) {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--accent) 13%, var(--surface)), var(--surface));
+}
+.mode-card,
+.choice {
+  border-radius: 12px;
+}
+.tariff-card,
+.lite-tariff-overview,
+.demo-card,
+.marketplace-block,
+.lite-information {
+  border-radius: 14px;
+}
+.tariff-card.active,
+.lite-tariff-overview.active {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent), var(--shadow-panel);
+}
+
+input[type="text"],
+input[type="number"],
+select,
+textarea,
+.number-control {
+  color: var(--text);
+  background-color: var(--input-bg);
+}
+.number-control {
+  border-color: var(--line-strong);
+}
+.step-button {
+  color: var(--text);
+  background: var(--surface-2);
+}
+.step-button:hover {
+  background: var(--hover-surface);
+}
+select {
+  background-color: var(--input-bg);
+}
+textarea:disabled {
+  color: var(--muted);
+  background: var(--surface-2);
+}
+.button-secondary {
+  color: var(--text);
+}
+.button-primary {
+  background: linear-gradient(135deg, #8f62f2, #6f46d9);
+  box-shadow: 0 10px 26px rgba(111,70,217,.20);
+}
+.button-primary:hover {
+  background: linear-gradient(135deg, #9b72f5, #7950de);
+}
+.summary-actions {
+  border-top-color: var(--line);
+}
+.service-chip,
+.comment-card,
+.marketplace-block,
+.lite-information {
+  background: var(--surface-2);
+}
+.modal-overlay {
+  background: rgba(3,4,7,.68);
+  backdrop-filter: blur(7px);
+}
+.modal-dialog {
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-floating);
+}
+.modal-close,
+.info-trigger,
+.icon-button {
+  color: var(--muted);
+  border-color: var(--line);
+}
+.modal-close:hover,
+.info-trigger:hover,
+.icon-button:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+.faq-answer {
+  line-height: 1.65;
+}
+details {
+  transition: background .16s ease;
+}
+details[open] {
+  background: color-mix(in srgb, var(--surface) 52%, transparent);
+}
+summary {
+  padding-left: 4px;
+  padding-right: 4px;
+}
+.section-title h2,
+.form-section h3,
+.feature-group-head h4,
+.payment-group h4 {
+  text-wrap: balance;
+}
+
+html[data-theme="dark"] *::-webkit-scrollbar-track { background: var(--scroll-track); }
+html[data-theme="dark"] *::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb);
+  border-color: var(--scroll-track);
+}
+html[data-theme="dark"] {
+  scrollbar-color: var(--scroll-thumb) var(--scroll-track);
+}
+html[data-theme="light"] *::-webkit-scrollbar-track { background: var(--scroll-track); }
+html[data-theme="light"] *::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb);
+  border-color: var(--scroll-track);
+}
+
+@media (max-width: 700px) {
+  .nav-actions { gap: 8px; }
+  .hero-grid { padding: 24px 18px; border-radius: 17px; }
+  .hero-card { padding-left: 0; padding-top: 20px; border-left: 0; border-top: 1px solid var(--line); }
+  .form-panel { padding: 18px; }
+}
+
+</style>
+</head>
+<body>
+<header>
+  <div class="container nav">
+    <div class="brand"><div class="brand-mark">SC</div><div>QR-меню від Smart Cafe</div></div>
+    <div class="nav-actions">
+      <nav class="nav-links"><a href="#calculator">Калькулятор</a><a href="#tariffs">Тарифи</a><a href="#faq">Запитання</a><a href="#demo">Приклади</a></nav>
+      <button class="theme-toggle" id="themeToggle" type="button" aria-label="Увімкнути світлу тему" title="Змінити тему">
+        <span class="theme-toggle-icon" id="themeToggleIcon" aria-hidden="true">☀</span>
+      </button>
+    </div>
+  </div>
+</header>
+<main>
+<section class="hero">
+  <div class="container hero-grid">
+    <div>
+      <h1>Калькулятор вартості QR-меню</h1>
+      <p>Оберіть формат підключення, потрібні продукти й додаткові послуги. Підсумок можна скопіювати або одразу завантажити як акуратну комерційну пропозицію у PDF.</p>
+      <div class="hero-actions"><a class="button button-primary" href="#calculator">Почати розрахунок</a><a class="button button-secondary" href="#tariffs">Переглянути тарифи</a></div>
+    </div>
+    <div class="hero-card">
+      <div class="hero-stat"><b>Lite Integration</b><span>₴150 за ID на місяць, до 200 замовлень</span></div>
+      <div class="hero-stat"><b>Стандартні тарифи</b><span>визначаються за середньою кількістю замовлень на одну локацію</span></div>
+      <div class="hero-stat"><b>Один звіт</b><span>тариф, разові платежі, щомісячні витрати та обрані послуги</span></div>
+    </div>
+  </div>
+</section>
+<section id="calculator">
+  <div class="container">
+    <div class="section-title"><h2>Калькулятор конфігурації</h2><p>Суми округлені для зручного попереднього розрахунку. Фінальні умови фіксуються в комерційній пропозиції.</p></div>
+    <div class="calculator-layout">
+      <form class="panel form-panel" id="calculatorForm" onsubmit="return false;">
+        <div class="form-section">
+          <h3><span class="section-index">0.</span> Формат підключення</h3>
+          <p>Оберіть Lite Integration або стандартний формат. Ці варіанти взаємовиключні.</p>
+          <div class="mode-grid">
+            <label class="mode-card" data-info="lite">
+              <input id="modeLite" name="connectionMode" type="radio" value="lite" />
+              <span class="mode-check"></span>
+              <span class="mode-content"><span class="mode-kicker">Спрощене підключення</span><strong>Lite Integration</strong><span>₴150 / ID / місяць</span><small>Базова синхронізація меню, stop-list і одна інтеграція з маркетплейсом.</small></span>
+            </label>
+            <label class="mode-card" data-info="standard">
+              <input checked id="modeStandard" name="connectionMode" type="radio" value="standard" />
+              <span class="mode-check"></span>
+              <span class="mode-content"><span class="mode-kicker">Повний формат</span><strong>Стандартні тарифи</strong><span>Small, Medium, Large або Unlimited</span><small>Тариф залежить тільки від середньої кількості замовлень на одну локацію.</small></span>
+            </label>
+          </div>
+          <div class="lite-information hidden" id="liteInformation">
+            <div class="lite-price-line"><div><span>Lite Integration</span><b>₴150 / ID / місяць</b></div><div class="field lite-id-field"><label for="liteIds">Кількість ID</label><input id="liteIds" min="1" step="1" type="number" value="1" /></div></div>
+            <div class="lite-lists"><div class="lite-list"><h4>Включено</h4><ul><li>синхронізація меню;</li><li>автоматичне оновлення;</li><li>stop-list;</li><li>одна інтеграція з маркетплейсом.</li></ul></div><div class="lite-list"><h4>Не включено</h4><ul><li>віртуальні бренди;</li><li>категорії цін;</li><li>декілька меню;</li><li>розширений функціонал.</li></ul></div></div>
+            <div class="notice">Lite Integration доступний до 200 замовлень на місяць. За більшого обсягу або потреби в розширеному функціоналі оберіть стандартний формат.</div>
+          </div>
+        </div>
+        <div class="form-section">
+          <h3><span class="section-index">1.</span> Інформація про заклад</h3><p>Ці дані потраплять у підсумок і PDF.</p>
+          <div class="grid-2">
+            <div class="field"><label for="venueName">Назва закладу або мережі</label><input id="venueName" placeholder="Наприклад, New York" type="text" /></div>
+            <div class="field" id="locationsField"><label for="locations">Кількість закладів / локацій</label><input id="locations" min="1" step="1" type="number" value="1" /><small>1–2 локації входять у базову модель. Від 3-ї потрібен окремий розрахунок.</small></div>
+            <div class="field" id="ordersField"><label for="orders">Загальна кількість замовлень на місяць</label><input id="orders" min="0" step="1" type="number" value="0" /><small>Для стандартних тарифів сума ділиться на кількість локацій. Для Lite Integration діє загальний ліміт 200.</small><div class="calculated-hint">Середня кількість на одну локацію: <b id="averageOrdersPerLocation">0</b></div></div>
+            <div class="field" id="siteOrdersField"><label for="siteOrders">Замовлень через власний сайт</label><input id="siteOrders" min="0" step="1" type="number" value="0" /><small>Інформаційне поле для майбутнього розрахунку комісій.</small></div>
+            <div class="field" id="tablesField"><label for="tables">Кількість столів</label><input id="tables" min="0" step="1" type="number" value="0" /><small>Використовується для розрахунку QR-виклику офіціанта.</small></div>
+          </div>
+        </div>
+        <div class="form-section" id="standardFeaturesSection">
+          <h3><span class="section-index">2.</span> Необхідні продукти</h3><p>Обраний функціонал не змінює тариф Small–Unlimited.</p>
+          <div class="feature-groups">
+            <div class="feature-group">
+              <div class="feature-group-head"><div><h4>Інтеграція з POS і маркетплейсами</h4><p>Меню, статуси, стоп-листи та передача замовлень.</p></div><span class="tier-note">Доступно в усіх тарифах</span></div>
+              <div class="choice-grid">
+                <label class="choice" data-info="fullPos"><input data-service="Повна інтеграція з POS" id="fullPos" type="checkbox" /><span><strong>Повна POS-інтеграція</strong><span>Двосторонній обмін із SYRVE</span></span></label>
+                <label class="choice" data-info="statusSync"><input data-service="Синхронізація статусів" id="statusSync" type="checkbox" /><span><strong>Статуси замовлень</strong><span>Прийнято, готується, готове та інші статуси</span></span></label>
+                <label class="choice" data-info="stopLists"><input data-service="Синхронізація стоп-листів" id="stopLists" type="checkbox" /><span><strong>Стоп-листи</strong><span>Швидке оновлення недоступних позицій</span></span></label>
+                <label class="choice" data-info="modifiers"><input data-service="Синхронізація модифікаторів" id="modifiers" type="checkbox" /><span><strong>Модифікатори</strong><span>Групи, варіанти й доповнення до страв</span></span></label>
+                <label class="choice" data-info="marketplaceFeature"><input data-service="Підключення маркетплейсів" id="marketplaceFeature" type="checkbox" /><span><strong>Маркетплейси доставки</strong><span>Glovo, Bolt, Loco та інші доступні платформи</span></span></label>
+                <label class="choice" data-info="posMenuSync"><input data-service="Синхронізація меню з POS" id="posMenuSync" type="checkbox" /><span><strong>Синхронізація меню</strong><span>Фото, описи, категорії, ціни та позиції</span></span></label>
+                <label class="choice" data-info="posOrderTransfer"><input data-service="Передача замовлень у POS" id="posOrderTransfer" type="checkbox" /><span><strong>Передача замовлень</strong><span>На касу або в централізований кабінет</span></span></label>
+                <label class="choice" data-info="autoConfirm"><input data-service="Автоматичне прийняття замовлень" id="autoConfirm" type="checkbox" /><span><strong>Автоматичне прийняття</strong><span>Передача замовлення в роботу без зайвого кроку</span></span></label>
+              </div>
+            </div>
+            <div class="feature-group">
+              <div class="feature-group-head"><div><h4>Власний сайт і онлайн-замовлення</h4><p>Доставка, самовивіз, оплата та аналітика.</p></div><span class="tier-note">Доступно в усіх тарифах</span></div>
+              <div class="choice-grid">
+                <label class="choice" data-info="ownSite"><input data-service="Власний сайт замовлень" id="ownSite" type="checkbox" /><span><strong>Власний сайт</strong><span>Адаптивний сайт доставки й самовивозу</span></span></label>
+                <label class="choice" data-info="onlinePayment"><input data-service="Онлайн-оплата" id="onlinePayment" type="checkbox" /><span><strong>Онлайн-оплата</strong><span>MonoPay, LiqPay, WayForPay та інші варіанти</span></span></label>
+                <label class="choice" data-info="pickup"><input data-service="Самовивіз" id="pickup" type="checkbox" /><span><strong>Самовивіз</strong><span>Окремий сценарій отримання замовлення</span></span></label>
+                <label class="choice" data-info="promotions"><input data-service="Акції та спеціальні пропозиції" id="promotions" type="checkbox" /><span><strong>Акції та пропозиції</strong><span>Знижки, подарунки й різні цінові сценарії</span></span></label>
+                <label class="choice" data-info="promoCodes"><input data-service="Промокоди" id="promoCodes" type="checkbox" /><span><strong>Промокоди</strong><span>Коди для рекламних кампаній</span></span></label>
+                <label class="choice" data-info="analytics"><input data-service="Аналітика замовлень" id="analytics" type="checkbox" /><span><strong>Аналітика</strong><span>Замовлення, конверсії та маркетингові події</span></span></label>
+              </div>
+            </div>
+            <div class="feature-group">
+              <div class="feature-group-head"><div><h4>QR-меню та обслуговування столу</h4><p>Перегляд меню, замовлення, оплата й взаємодія з персоналом.</p></div><span class="tier-note">Доступно в усіх тарифах</span></div>
+              <div class="choice-grid">
+                <label class="choice" data-info="qrMenuBase"><input data-service="Базове QR-меню" id="qrMenuBase" type="checkbox" /><span><strong>Базове QR-меню</strong><span>Фото, описи, алергени, пошук і обране</span></span></label>
+                <label class="choice" data-info="waiterCall"><input data-service="QR-виклик офіціанта" id="waiterCall" type="checkbox" /><span><strong>Виклик офіціанта</strong><span>Виклик персоналу та запит рахунку</span></span></label>
+                <label class="choice" data-info="qrPay"><input data-service="QR-оплата рахунку та чайові" id="qrPay" type="checkbox" /><span><strong>QR-оплата та чайові</strong><span>Оплата зі смартфона; чайові через ПриватБанк</span></span></label>
+                <label class="choice" data-info="reviews"><input data-service="Збір відгуків" id="reviews" type="checkbox" /><span><strong>Відгуки після візиту</strong><span>Збір зворотного зв’язку та внутрішня аналітика</span></span></label>
+                <label class="choice" data-info="autoReviews"><input data-service="Автоматичний збір відгуків через SMS" id="autoReviews" type="checkbox" /><span><strong>Автоматичний збір відгуків</strong><span>SMS після замовлення; SMS оплачуються окремо</span></span></label>
+              </div>
+            </div>
+            <div class="feature-group">
+              <div class="feature-group-head"><div><h4>Лояльність і додаткові можливості</h4><p>Особистий кабінет, бонуси та повторні замовлення.</p></div><span class="tier-note">Окремі функції уточнюються</span></div>
+              <div class="choice-grid">
+                <label class="choice" data-info="bonusSystem"><input data-service="Лояльність і бонуси" id="bonusSystem" type="checkbox" /><span><strong>Лояльність і бонуси</strong><span>Історія замовлень, адреси та відображення бонусів</span></span></label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="form-section" id="standardPaymentsSection">
+          <h3><span class="section-index">3.</span> Платежі та додаткові послуги</h3><p>Разові та щомісячні платежі рахуються окремо.</p>
+          <div class="payment-groups">
+            <div class="payment-group">
+              <h4>Додаткові разові платежі</h4><p>Налаштування, підготовка та окремі інтеграції.</p>
+              <div class="marketplace-block"><h5>Маркетплейси для підключення</h5><p>Перше підключення кожної платформи включено. Друге та кожне наступне підключення тієї самої платформи — ₴225 разово.</p><div class="grid-3"><div class="field"><label for="glovoCount">Glovo <button type="button" class="info-trigger" data-info-button="glovoCount">i</button></label><input id="glovoCount" min="0" step="1" type="number" value="0" /><small>Перше підключення включено.</small></div><div class="field"><label for="boltCount">Bolt <button type="button" class="info-trigger" data-info-button="boltCount">i</button></label><input id="boltCount" min="0" step="1" type="number" value="0" /><small>Перше підключення включено.</small></div><div class="field"><label for="locoCount">Loco <button type="button" class="info-trigger" data-info-button="locoCount">i</button></label><input id="locoCount" min="0" step="1" type="number" value="0" /><small>Перше підключення включено.</small></div></div></div>
+              <div class="choice-grid payment-items-grid">
+                <label class="choice" data-info="setupPos"><input data-service="Налаштування POS-інтеграції" id="setupPos" type="checkbox" /><span><strong>Налаштування POS-інтеграції</strong><span>₴2 500 разово</span></span></label>
+                <label class="choice" data-info="menuImport"><input data-service="Підготовка меню до імпорту" id="menuImport" type="checkbox" /><span><strong>Підготовка меню</strong><span>₴2 500 разово</span></span></label>
+                <label class="choice" data-info="reviewSetup"><input data-service="Налаштування збору відгуків" id="reviewSetup" type="checkbox" /><span><strong>Налаштування відгуків</strong><span>₴500 за локацію</span></span></label>
+                <label class="choice" data-info="customIntegration"><input data-service="Індивідуальна інтеграція" id="customIntegration" type="checkbox" /><span><strong>Індивідуальна інтеграція</strong><span>Попередня оцінка від ₴25 500</span></span></label>
+                <label class="choice website-creation-card" data-info="websiteCreation"><input data-service="Створення сайту" id="websiteCreation" type="checkbox" /><span><strong>Створення сайту</strong><span>₴5 100 разово, без окремої щомісячної плати за створення</span></span></label>
+              </div>
+              <div class="notice">Створення сайту потрібне для власної доставки, самовивозу, онлайн-замовлень або оплати карткою через сайт.</div>
+            </div>
+            <div class="payment-group">
+              <h4>Щомісячні додаткові платежі</h4><p>Модулі й послуги поверх базового тарифу.</p>
+              <div class="choice-grid">
+                <label class="choice" data-info="waiterCall"><input data-service="QR-виклик офіціанта" id="waiterCallPayment" type="checkbox" /><span><strong>QR-виклик офіціанта</strong><span>₴100 за стіл на місяць + ₴500 разове налаштування</span></span></label>
+                <label class="choice" data-info="reviewBoost"><input data-service="Google Review Boost" id="reviewBoost" type="checkbox" /><span><strong>Review Boost</strong><span>₴500 на місяць</span></span></label>
+                <label class="choice" data-info="premiumSupport"><input data-service="Розширена підтримка" id="premiumSupport" type="checkbox" /><span><strong>Розширена підтримка</strong><span>₴5 100 на місяць</span></span></label>
+                <div class="field"><label for="lastMile">Last-mile сервіси <button type="button" class="info-trigger" data-info-button="lastMile">i</button></label><input id="lastMile" min="0" step="1" type="number" value="0" /><small>₴1 300 за сервіс разово; ₴250/міс за кожен додатковий після першого.</small></div>
+                <div class="field"><label for="virtualBrands">Virtual Brand <button type="button" class="info-trigger" data-info-button="virtualBrands">i</button></label><input id="virtualBrands" min="0" step="1" type="number" value="0" /><small>₴500 за кожен бренд на місяць.</small></div>
+              </div>
+            </div>
+            <div class="payment-group">
+              <h4>Додаткові витрати</h4><p>Комісії та змінні витрати, які не входять у числовий підсумок.</p>
+              <div class="static-cost-note"><strong>SMS-повідомлення:</strong> орієнтовно ₴7 за одне SMS, за фактичним використанням.</div>
+              <div class="grid-2">
+                <div class="field"><label for="paymentSystem">Платіжна система <button type="button" class="info-trigger" data-info-button="paymentSystem">i</button></label><select id="paymentSystem"><option value="">Не обрано</option><option>WayForPay</option><option>LiqPay</option><option>MonoPay</option><option>Fondy</option><option>Stripe</option></select><small>Комісія провайдера розраховується окремо.</small></div>
+                <label class="choice" data-info="customImprovements"><input data-service="Індивідуальні доробки" id="customImprovements" type="checkbox" /><span><strong>Індивідуальні доробки</strong><span>Оцінюються після опису задачі</span></span></label>
+              </div>
+              <div class="field" style="margin-top:14px"><label for="customImprovementsDetails">Опис індивідуальних доробок</label><textarea id="customImprovementsDetails" disabled placeholder="Спочатку оберіть «Індивідуальні доробки». "></textarea><small>Опис потрапить у підсумок і PDF.</small></div>
+            </div>
+          </div>
+        </div>
+        <div class="form-section"><h3><span class="section-index">4.</span> Коментар або запитання</h3><p>Додайте важливі уточнення, побажання або питання. Вони потраплять у звіт і комерційну пропозицію.</p><textarea id="managerNote" placeholder="Наприклад: потрібен частковий перехід, окрема логіка прийняття замовлень або уточнення щодо інтеграції..."></textarea></div>
+      </form>
+      <aside class="panel summary-panel" id="summary">
+        <button class="icon-button" id="expandSummary" type="button" aria-label="Розгорнути звіт">↗</button>
+        <div class="summary-scroll">
+          <div class="summary-head"><div class="summary-label" id="summaryVenue">Орієнтовний розрахунок</div><div class="plan-name" id="planName">Small</div><div class="plan-price" id="planPrice">₴1 800 / місяць</div></div>
+          <div class="summary-total"><div class="total-row"><span>Орієнтовно щомісяця</span><b id="monthlyTotal">₴1 800</b></div><div class="total-row"><span>Разове підключення</span><b id="setupTotal">₴0</b></div></div>
+          <div class="report-block"><h4>Введені дані</h4><ul class="report-list" id="inputSummary"></ul></div>
+          <div class="report-block"><h4>Обрані послуги</h4><div class="service-chips" id="selectedServices"></div><div class="empty-state" id="noServices">Нічого не обрано.</div></div>
+          <div class="report-block"><div class="money-group"><div class="money-group-title"><span>Тариф</span><b id="baseGroupTotal">₴1 800</b></div><ul class="breakdown" id="baseBreakdown"></ul></div><div class="money-group"><div class="money-group-title"><span>Разові платежі</span><b id="setupGroupTotal">₴0</b></div><ul class="breakdown" id="setupBreakdown"></ul></div><div class="money-group"><div class="money-group-title"><span>Щомісячні доплати</span><b id="monthlyExtrasTotal">₴0</b></div><ul class="breakdown" id="monthlyBreakdown"></ul></div><div class="money-group"><div class="money-group-title"><span>Додаткові витрати</span><b id="expensesTotal">Окремо</b></div><ul class="breakdown" id="expensesBreakdown"></ul></div></div>
+          <div class="notice hidden" id="liteLimitNotice">Lite Integration доступний лише до 200 замовлень на місяць.</div>
+          <div class="notice hidden" id="locationNotice">Доплата за 3-тю та наступні локації не включена.</div>
+          <div class="notice hidden" id="providerNotice">Комісія платіжної системи розраховується окремо.</div>
+          <div class="notice hidden" id="customNotice">Індивідуальні доробки потребують окремої оцінки.</div>
+          <div class="notice success" id="planReason"></div>
+          <div class="report-block hidden" id="commentBlock"><h4>Коментар або запитання</h4><div class="comment-card" id="commentText"></div></div>
+        </div>
+        <div class="summary-actions"><button class="button button-primary" id="downloadPdfButton" type="button">Завантажити PDF</button><button class="button button-secondary" id="copyButton" type="button">Копіювати звіт</button><button class="button button-ghost wide" id="resetButton" type="button">Скинути</button></div>
+      </aside>
+    </div>
+  </div>
+</section>
+<section id="tariffs">
+  <div class="container"><div class="section-title"><h2>Тарифні плани</h2><p>Lite Integration обирається окремо. Small, Medium, Large та Unlimited залежать тільки від середньої кількості замовлень на одну локацію.</p></div>
+    <article class="lite-tariff-overview" data-plan-card="Lite"><div class="lite-overview-head"><div><span class="mode-kicker">Окремий тариф</span><h3>Lite Integration</h3><div class="price">₴150 <small>/ ID / місяць</small></div></div><div class="lite-limit">До 200 замовлень на місяць</div></div><div class="lite-overview-columns"><div><h4>Включено</h4><p>Синхронізація меню, автоматичне оновлення, stop-list та одна інтеграція з маркетплейсом.</p></div><div><h4>Не включено</h4><p>Віртуальні бренди, категорії цін, декілька меню та розширений функціонал.</p></div></div></article>
+    <div class="tariff-cards"><article class="tariff-card" data-plan-card="Small"><h3>Small</h3><div class="price">₴1 800</div><p>До 200 замовлень у середньому на одну локацію.</p></article><article class="tariff-card" data-plan-card="Medium"><h3>Medium</h3><div class="price">₴3 100</div><p>До 400 замовлень у середньому на одну локацію.</p></article><article class="tariff-card" data-plan-card="Large"><h3>Large</h3><div class="price">₴4 600</div><p>До 700 замовлень у середньому на одну локацію.</p></article><article class="tariff-card" data-plan-card="Unlimited"><h3>Unlimited</h3><div class="price">₴5 600</div><p>Понад 700 замовлень у середньому на одну локацію.</p></article></div>
+    <div class="notice">Ціни округлені для попереднього розрахунку. Підсумкові умови підтверджуються в комерційній пропозиції.</div>
+  </div>
+</section>
+<section id="faq"><div class="container"><div class="section-title"><h2>Найчастіші запитання</h2><p>Короткі відповіді щодо інтеграцій, сайту, QR-меню та доставки.</p></div><div class="faq">
+  <details><summary>Які дані синхронізуються з маркетплейсами?</summary><div class="faq-answer">Меню, фото, описи, категорії, модифікатори, стоп-листи та статуси замовлень. Контактні дані гостя передаються лише тоді, коли це дозволяє конкретна платформа.</div></details>
+  <details><summary>Як швидко оновлюються стоп-листи?</summary><div class="faq-answer">Орієнтовно за 2–3 секунди після зміни в основній системі.</div></details>
+  <details><summary>Як можна приймати замовлення з маркетплейсів?</summary><div class="faq-answer">Через планшет, окремий брендований кабінет або централізовано через касу. За правильно налаштованого процесу можливе автоматичне прийняття й передача в кухню.</div></details>
+  <details><summary>Чи можна скасувати вже прийняте замовлення?</summary><div class="faq-answer">Після автоматичного або ручного прийняття замовлення в маркетплейсі його відхилення зазвичай виконується через підтримку відповідної платформи.</div></details>
+  <details><summary>Що підтримує власний сайт доставки?</summary><div class="faq-answer">Адаптивний дизайн, меню й модифікатори, доставка по радіусу або полігонах, різні ціни для зон, самовивіз, онлайн-оплату, власних кур’єрів і last-mile сервіси.</div></details>
+  <details><summary>Чи є особистий кабінет гостя?</summary><div class="faq-answer">Так. Можуть зберігатися історія замовлень, адреси та платіжні способи. Для першого входу потрібна SMS-ідентифікація, а SMS оплачуються окремо.</div></details>
+  <details><summary>Які формати QR-меню доступні?</summary><div class="faq-answer">Базове меню для перегляду та формат з обслуговуванням столу: замовлення, виклик офіціанта, запит рахунку, оплата й чайові.</div></details>
+  <details><summary>Через які платіжні системи працюють чайові?</summary><div class="faq-answer">Чайові через QR доступні через платіжні плагіни ПриватБанку. Оплата самого замовлення може працювати з іншими платіжними системами.</div></details>
+  <details><summary>Чи можна відстежувати кур’єра на мапі?</summary><div class="faq-answer">Це залежить від API конкретного last-mile сервісу. Статуси доставки можуть відображатися на сайті або в особистому кабінеті.</div></details>
+  <details><summary>Який статус бонусної системи?</summary><div class="faq-answer">Відображення бонусів доступне, але розрахунок бонусів і частина сценаріїв лояльності ще допрацьовуються.</div></details>
+</div></div></section>
+<section id="demo"><div class="container"><div class="section-title"><h2>Приклади роботи</h2><p>Після погодження тут можна додати демо-сайт і посилання на робочий приклад закладу.</p></div><div class="demo-grid"><article class="demo-card"><div><h3>Інтерактивний демо-сайт</h3><p>Перегляд меню, кошик і тестовий сценарій замовлення.</p></div><a class="button button-secondary disabled-link" href="#">Посилання буде додано</a></article><article class="demo-card"><div><h3>Робочий приклад</h3><p>Посилання на сайт підключеного закладу після погодження.</p></div><a class="button button-secondary disabled-link" href="#">Посилання буде додано</a></article></div></div></section>
+</main>
+<footer><div class="container footer-inner"><div>QR-меню від Smart Cafe</div><div>Попередній розрахунок уточнюється перед підключенням.</div></div></footer>
+<div class="modal-overlay" id="productInfoOverlay" aria-hidden="true"><div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="productInfoTitle"><div class="modal-head"><div><div class="modal-kicker">Опис продукту</div><h3 id="productInfoTitle">Інформація</h3></div><button type="button" class="modal-close" id="productInfoClose" aria-label="Закрити">×</button></div><p class="modal-summary" id="productInfoSummary"></p><ul class="modal-list" id="productInfoList"></ul><div class="modal-caution hidden" id="productInfoCaution"></div></div></div>
+<div class="summary-backdrop" id="summaryBackdrop"></div>
+<div class="pdf-stage" id="pdfStage"></div>
+<script>
+const PRICES = {"lite_per_id": 150, "small": 1800, "medium": 3100, "large": 4600, "unlimited": 5600, "marketplace_extra": 225, "setup_pos": 2500, "menu_import": 2500, "review_setup": 500, "custom_integration": 25500, "site_creation": 5100, "waiter_setup": 500, "waiter_table_month": 100, "review_boost": 500, "premium_support": 5100, "last_mile_setup": 1300, "last_mile_extra_month": 250, "virtual_brand_month": 500, "sms": 7};
+const PLANS = { Small:{price:PRICES.small,max:200}, Medium:{price:PRICES.medium,max:400}, Large:{price:PRICES.large,max:700}, Unlimited:{price:PRICES.unlimited,max:Infinity} };
+const PRODUCT_INFO = {"lite": {"title": "Lite Integration", "summary": "Спрощений тариф для базової синхронізації меню.", "bullets": ["₴150 за кожен ID на місяць.", "До 200 замовлень на місяць.", "Включено синхронізацію меню, автоматичне оновлення, stop-list і одну інтеграцію з маркетплейсом."], "caution": "Віртуальні бренди, категорії цін, декілька меню та розширений функціонал не входять."}, "standard": {"title": "Стандартні тарифи", "summary": "Повний формат із тарифом Small, Medium, Large або Unlimited.", "bullets": ["Тариф визначається тільки середньою кількістю замовлень на одну локацію.", "Функціональні модулі не підвищують тариф.", "Разові й щомісячні додаткові послуги рахуються окремо."], "caution": "Доплата за третю та наступні локації потребує окремого розрахунку."}, "fullPos": {"title": "Повна POS-інтеграція", "summary": "Двосторонній обмін даними між SYRVE та підключеними цифровими каналами.", "bullets": ["Синхронізація меню, позицій, категорій і модифікаторів.", "Передача статусів замовлень у двох напрямках.", "Збереження логів для підтримки та розбору інцидентів."], "caution": "Конкретний сценарій залежить від API та конфігурації закладу."}, "statusSync": {"title": "Синхронізація статусів", "summary": "Статуси замовлення оновлюються між касою, сайтом і маркетплейсами.", "bullets": ["Прийнято.", "Готується.", "Готове до видачі.", "Очікує кур’єра та інші доступні статуси."], "caution": "Набір статусів залежить від можливостей конкретної платформи."}, "stopLists": {"title": "Стоп-листи", "summary": "Недоступні позиції швидко прибираються з підключених каналів.", "bullets": ["Зміна вноситься в основній системі.", "Оновлення в інтегрованих платформах займає орієнтовно 2–3 секунди."], "caution": "Фактична швидкість може залежати від платформи та стабільності з’єднання."}, "modifiers": {"title": "Модифікатори", "summary": "Передача груп модифікаторів, варіантів і доповнень до страв.", "bullets": ["Додаткові інгредієнти.", "Варіанти розміру або приготування.", "Обов’язкові й необов’язкові групи."], "caution": "Підтримка окремих типів модифікаторів залежить від API каналу."}, "marketplaceFeature": {"title": "Маркетплейси доставки", "summary": "Меню ведеться як єдине джерело даних і синхронізується з платформами доставки.", "bullets": ["Меню, фото, описи, категорії та модифікатори.", "Стоп-листи й статуси замовлень.", "Ручне, автоматичне або централізоване прийняття замовлень."], "caution": "Контактні дані гостя передаються не завжди. Після прийняття замовлення скасування може потребувати звернення до підтримки маркетплейсу."}, "posMenuSync": {"title": "Синхронізація меню", "summary": "Основні дані меню оновлюються з SYRVE в підключених каналах.", "bullets": ["Назви, фото й описи.", "Категорії, ціни й модифікатори.", "Нові та приховані позиції."], "caution": "Рекомендується вести основні дані в SYRVE для стабільної синхронізації."}, "posOrderTransfer": {"title": "Передача замовлень у POS", "summary": "Замовлення можуть надходити на касу або в один централізований кабінет.", "bullets": ["Передача з власного сайту.", "Передача з маркетплейсів.", "Передача замовлень зі столу."], "caution": "Точний сценарій прийняття узгоджується під процеси закладу."}, "autoConfirm": {"title": "Автоматичне прийняття замовлень", "summary": "Замовлення можна автоматично передавати в роботу й на кухню.", "bullets": ["Менше ручних підтверджень.", "Швидший старт приготування.", "Можливість працювати без постійного контролю стороннього кабінету."], "caution": "Автоматичний сценарій варто вмикати лише після перевірки процесів. Після прийняття скасування через маркетплейс може вимагати звернення до підтримки."}, "ownSite": {"title": "Власний сайт доставки", "summary": "Адаптивний сайт для доставки, самовивозу та онлайн-замовлень.", "bullets": ["Працює на телефоні, планшеті й комп’ютері.", "Банери, фото, категорії та імпорт меню.", "Доставка за радіусом, полігонами або зонами міста.", "Різна вартість доставки для різних зон."], "caution": "Для запуску сайту потрібно окремо обрати разову послугу «Створення сайту»."}, "onlinePayment": {"title": "Онлайн-оплата", "summary": "Оплата замовлень через підключеного платіжного провайдера.", "bullets": ["MonoPay.", "LiqPay.", "WayForPay або Fondy.", "Stripe для доречних міжнародних сценаріїв."], "caution": "Комісія платіжного провайдера розраховується окремо."}, "pickup": {"title": "Самовивіз", "summary": "Окремий сценарій отримання замовлення без кур’єрської доставки.", "bullets": ["Вибір локації.", "Погодження часу готовності.", "Автоматична або ручна передача замовлення на касу."], "caution": ""}, "promotions": {"title": "Акції та спеціальні пропозиції", "summary": "Налаштування знижок, подарунків і різних цінових сценаріїв.", "bullets": ["Різні ціни для окремих каналів.", "Знижки на товари або замовлення.", "Спеціальні пропозиції для доставки чи самовивозу."], "caution": "Частина сценаріїв лояльності й знижок потребує окремого технічного підтвердження."}, "promoCodes": {"title": "Промокоди", "summary": "Коди для рекламних кампаній і спеціальних умов замовлення.", "bullets": ["Фіксована або відсоткова знижка.", "Прив’язка до кампанії чи каналу."], "caution": "Конкретні правила промокодів узгоджуються під час налаштування."}, "analytics": {"title": "Аналітика замовлень", "summary": "Аналітика замовлень, що проходять через систему, і маркетингових подій.", "bullets": ["Історія замовлень.", "Дані для GA4 і Meta Pixel.", "Логи дій для підтримки."], "caution": "Доступність окремих даних залежить від джерела замовлення."}, "qrMenuBase": {"title": "Базове QR-меню", "summary": "Меню для перегляду зі смартфона без обов’язкового замовлення.", "bullets": ["Фото категорій і страв.", "Описи, алергени й позначки «веганське» або «гостре».", "Пошук, обране та відгук після візиту.", "Недоступні страви відображаються сірим."], "caution": "Лайки використовуються для внутрішньої аналітики й не показуються гостям як публічний рейтинг."}, "waiterCall": {"title": "QR-виклик офіціанта", "summary": "Функції обслуговування столу через QR-код, прив’язаний до конкретного столу.", "bullets": ["Виклик офіціанта.", "Запит рахунку.", "Сповіщення можуть надходити в Telegram-бот.", "Статус замовлення видно в реальному часі."], "caution": "Повний сценарій повідомлень у waiter потребує технічного підтвердження. Для роботи потрібні QR-коди на кожен стіл."}, "qrPay": {"title": "QR-оплата та чайові", "summary": "Оплата рахунку або замовлення зі смартфона.", "bullets": ["Оплата самого замовлення може працювати з різними платіжними системами.", "Чайові можуть одразу надходити на картку офіціанта."], "caution": "Чайові через QR працюють лише через платіжні плагіни ПриватБанку."}, "reviews": {"title": "Збір відгуків", "summary": "Зворотний зв’язок після візиту або замовлення.", "bullets": ["Відгук після відвідування.", "Внутрішня аналітика по стравах і сервісу."], "caution": "Лайки не відображаються гостям як публічний рейтинг."}, "autoReviews": {"title": "Автоматичний збір відгуків", "summary": "Запит відгуку після замовлення через SMS або інший налаштований сценарій.", "bullets": ["Автоматичний контакт після завершення замовлення.", "Збір зворотного зв’язку без ручної роботи."], "caution": "SMS тарифікуються окремо за фактичним використанням."}, "bonusSystem": {"title": "Лояльність і бонуси", "summary": "Особистий кабінет із історією замовлень, адресами та відображенням бонусів.", "bullets": ["Контакти можуть передаватися в POS-систему.", "Відображення бонусів уже доступне.", "Для першого входу в кабінет потрібна SMS-ідентифікація."], "caution": "Розрахунок бонусів і частина сценаріїв лояльності ще допрацьовуються."}, "setupPos": {"title": "Налаштування POS-інтеграції", "summary": "Разове технічне налаштування обміну із SYRVE.", "bullets": ["Підключення API.", "Перевірка структури меню.", "Тестова передача даних і замовлень."], "caution": "Нестандартні сценарії можуть потребувати окремої оцінки."}, "menuImport": {"title": "Підготовка меню до імпорту", "summary": "Перевірка й підготовка меню перед синхронізацією.", "bullets": ["Категорії й позиції.", "Фото, описи та модифікатори.", "Приховування службових товарів."], "caution": "Для стабільної роботи рекомендовано вести основні дані в SYRVE."}, "reviewSetup": {"title": "Налаштування збору відгуків", "summary": "Разове налаштування сценаріїв збору й обробки відгуків.", "bullets": ["Підключення форми відгуку.", "Налаштування точок контакту.", "Перевірка відображення даних."], "caution": ""}, "customIntegration": {"title": "Індивідуальна інтеграція", "summary": "Окремий проєкт для нетипового маркетплейсу, retail-платформи або нестандартного API.", "bullets": ["Попередній технічний аудит.", "Оцінка термінів і вартості.", "Окреме погодження реалізації."], "caution": "Retail-інтеграції можуть мати технічні та юридичні обмеження."}, "websiteCreation": {"title": "Створення сайту", "summary": "Разова підготовка власного сайту доставки або самовивозу.", "bullets": ["Адаптація для мобільного, планшета й комп’ютера.", "Банер, фото, категорії та меню.", "Підключення зон доставки й обраної платіжної системи."], "caution": "Вартість створення сплачується разово. Тариф платформи й комісії провайдерів рахуються окремо."}, "reviewBoost": {"title": "Review Boost", "summary": "Додатковий модуль для системнішого збору позитивних відгуків.", "bullets": ["Сценарій перенаправлення задоволених гостей.", "Підсилення роботи з репутацією."], "caution": "Точний сценарій і канали узгоджуються під час налаштування."}, "premiumSupport": {"title": "Розширена підтримка", "summary": "Додатковий супровід для складних або критичних процесів.", "bullets": ["Пріоритетна обробка звернень.", "Розширений технічний супровід."], "caution": "Склад і час реакції фіксуються окремо."}, "lastMile": {"title": "Last-mile доставка", "summary": "Виклик кур’єра для будь-якого замовлення, яке вже є в системі.", "bullets": ["Власні кур’єри.", "Glovo, Loco та інші сервіси з доступним API.", "Статуси доставки на сайті або в особистому кабінеті."], "caution": "Відстеження кур’єра на мапі залежить від API конкретного сервісу."}, "virtualBrands": {"title": "Virtual Brand", "summary": "Окремий віртуальний бренд або меню для додаткового каналу продажу.", "bullets": ["Окреме позиціонування.", "Власний набір категорій і страв."], "caution": "Не входить у Lite Integration."}, "paymentSystem": {"title": "Платіжна система", "summary": "Провайдер для онлайн-оплати замовлень.", "bullets": ["WayForPay або Fondy.", "LiqPay.", "MonoPay.", "Stripe для міжнародних сценаріїв."], "caution": "Комісія й умови договору визначаються обраним провайдером."}, "customImprovements": {"title": "Індивідуальні доробки", "summary": "Нестандартні зміни в логіці, дизайні або інтеграціях.", "bullets": ["Спочатку потрібно описати задачу.", "Після технічної оцінки погоджуються строки й вартість."], "caution": "Не включаються в автоматичний розрахунок."}, "glovoCount": {"title": "Підключення Glovo", "summary": "Підключення меню й замовлень Glovo до єдиного контуру.", "bullets": ["Перше підключення включено.", "Кожне наступне підключення Glovo — ₴225 разово."], "caution": "Доступність контактних даних гостя залежить від політики Glovo."}, "boltCount": {"title": "Підключення Bolt", "summary": "Підключення меню й замовлень Bolt до єдиного контуру.", "bullets": ["Перше підключення включено.", "Кожне наступне підключення Bolt — ₴225 разово."], "caution": "Набір доступних даних залежить від API платформи."}, "locoCount": {"title": "Підключення Loco", "summary": "Підключення меню й замовлень Loco до єдиного контуру.", "bullets": ["Перше підключення включено.", "Кожне наступне підключення Loco — ₴225 разово."], "caution": "Набір доступних даних залежить від API платформи."}};
+const byId = id => document.getElementById(id);
+const num = id => Math.max(0, Number(byId(id)?.value || 0));
+const isChecked = id => Boolean(byId(id)?.checked);
+const uah = value => `₴${Math.round(Number(value || 0)).toLocaleString('uk-UA')}`;
+const currentMode = () => byId('modeLite').checked ? 'lite' : 'standard';
+function setupNumberInputs(){ document.querySelectorAll('input[type="number"]').forEach(input=>{ if(input.parentElement?.classList.contains('number-control')) return; const shell=document.createElement('div'); shell.className='number-control'; input.parentNode.insertBefore(shell,input); const minus=document.createElement('button'); minus.type='button'; minus.className='step-button'; minus.textContent='−'; minus.setAttribute('aria-label','Зменшити'); const plus=document.createElement('button'); plus.type='button'; plus.className='step-button'; plus.textContent='+'; plus.setAttribute('aria-label','Збільшити'); shell.append(minus,input,plus); const change=d=>{ try{d>0?input.stepUp():input.stepDown()}catch{input.value=Math.max(Number(input.min||0),Number(input.value||0)+d*Number(input.step||1))} input.dispatchEvent(new Event('input',{bubbles:true})); }; minus.addEventListener('click',()=>change(-1)); plus.addEventListener('click',()=>change(1)); }); }
+function setupInfoButtons(){ document.querySelectorAll('[data-info]').forEach(card=>{ if(card.querySelector(':scope > .info-trigger')) return; const b=document.createElement('button'); b.type='button'; b.className='info-trigger'; b.textContent='i'; b.setAttribute('aria-label','Показати опис'); b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();openInfo(card.dataset.info)}); card.appendChild(b); }); document.querySelectorAll('[data-info-button]').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();openInfo(b.dataset.infoButton)})); }
+function openInfo(key){ const info=PRODUCT_INFO[key]||{title:'Інформація',summary:'Інформацію для цього пункту не знайдено.',bullets:[],caution:''}; byId('productInfoTitle').textContent=info.title; byId('productInfoSummary').textContent=info.summary; byId('productInfoList').innerHTML=(info.bullets||[]).map(x=>`<li>${escapeHtml(x)}</li>`).join(''); byId('productInfoList').classList.toggle('hidden',!(info.bullets||[]).length); byId('productInfoCaution').textContent=info.caution||''; byId('productInfoCaution').classList.toggle('hidden',!info.caution); byId('productInfoOverlay').classList.add('active'); byId('productInfoOverlay').setAttribute('aria-hidden','false'); document.body.classList.add('modal-open'); byId('productInfoClose').focus(); }
+function closeInfo(){ byId('productInfoOverlay').classList.remove('active'); byId('productInfoOverlay').setAttribute('aria-hidden','true'); document.body.classList.remove('modal-open'); }
+function escapeHtml(v){ return String(v).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
+function setModeUI(){ const lite=currentMode()==='lite'; byId('liteInformation').classList.toggle('hidden',!lite); byId('standardFeaturesSection').classList.toggle('hidden',lite); byId('standardPaymentsSection').classList.toggle('hidden',lite); byId('locationsField').classList.toggle('hidden',lite); byId('siteOrdersField').classList.toggle('hidden',lite); byId('tablesField').classList.toggle('hidden',lite); byId('ordersField').querySelector('.calculated-hint').classList.toggle('hidden',lite); }
+function planByAverage(avg){ if(avg<=200)return 'Small'; if(avg<=400)return 'Medium'; if(avg<=700)return 'Large'; return 'Unlimited'; }
+function addLine(group,label,amount=null,note=''){ group.push({label,amount,note}); }
+function renderLines(id,lines,empty='Немає'){ const list=byId(id); list.innerHTML=''; if(!lines.length){list.innerHTML=`<li><span>${empty}</span><span>—</span></li>`;return;} lines.forEach(item=>{const li=document.createElement('li');li.innerHTML=`<span>${escapeHtml(item.label)}</span><span>${item.amount===null?escapeHtml(item.note):uah(item.amount)}</span>`;list.appendChild(li);}); }
+function marketplaceLine(name,count){ if(count<=1)return null; const extra=count-1; return {label:`${name}: ${count} підключення (${extra} додаткових)`,amount:extra*PRICES.marketplace_extra,note:''}; }
+function syncWaiterCall(){ const checked=isChecked('waiterCall')||isChecked('waiterCallPayment'); byId('waiterCall').checked=checked; byId('waiterCallPayment').checked=checked; }
+function syncCustomState(){ const enabled=isChecked('customImprovements')&&currentMode()==='standard'; byId('customImprovementsDetails').disabled=!enabled; if(!enabled)byId('customImprovementsDetails').value=''; byId('customImprovementsDetails').placeholder=enabled?'Опишіть потрібний нестандартний функціонал або інтеграцію.':'Спочатку оберіть «Індивідуальні доробки».'; }
+function selectedServices(){ if(currentMode()==='lite') return ['Синхронізація меню','Автоматичне оновлення меню','Stop-list','1 інтеграція з маркетплейсом']; const services=[...document.querySelectorAll('#standardFeaturesSection input[type="checkbox"]:checked, #standardPaymentsSection input[type="checkbox"]:checked')].map(i=>i.dataset.service).filter(Boolean); [['glovoCount','Glovo'],['boltCount','Bolt'],['locoCount','Loco']].forEach(([id,n])=>{const c=num(id);if(c>0)services.push(`${n} — ${c} підключ.`)}); return [...new Set(services)]; }
+function calculateLite(){ const name=byId('venueName').value.trim(); const totalOrders=num('orders'); const ids=Math.max(1,num('liteIds')); const monthlyTotal=ids*PRICES.lite_per_id; const base=[{label:`Lite Integration (${ids} ID)`,amount:monthlyTotal,note:''}],oneTime=[],monthly=[],expenses=[]; const services=selectedServices(); updateSummaryHeader(name,'Lite Integration',`${uah(PRICES.lite_per_id)} / ID / місяць`,monthlyTotal,0); renderLines('baseBreakdown',base); renderLines('setupBreakdown',oneTime); renderLines('monthlyBreakdown',monthly); renderLines('expensesBreakdown',expenses); byId('baseGroupTotal').textContent=uah(monthlyTotal);byId('setupGroupTotal').textContent=uah(0);byId('monthlyExtrasTotal').textContent=uah(0);byId('expensesTotal').textContent='—'; byId('inputSummary').innerHTML=[['Назва',name||'Не вказано'],['Формат','Lite Integration'],['Кількість ID',String(ids)],['Замовлень на місяць',String(totalOrders)]].map(([a,b])=>`<li><span>${escapeHtml(a)}</span><span>${escapeHtml(b)}</span></li>`).join(''); updateServices(services); const comment=byId('managerNote').value.trim(); updateComment(comment); const exceeded=totalOrders>200; byId('liteLimitNotice').classList.toggle('hidden',!exceeded); byId('locationNotice').classList.add('hidden');byId('providerNotice').classList.add('hidden');byId('customNotice').classList.add('hidden'); byId('planReason').textContent=exceeded?`Lite Integration: ${ids} ID × ${uah(PRICES.lite_per_id)} = ${uah(monthlyTotal)} на місяць. Обсяг перевищує 200 замовлень, тому рекомендовано стандартний формат.`:`Lite Integration: ${ids} ID × ${uah(PRICES.lite_per_id)} = ${uah(monthlyTotal)} на місяць.`; activateTariff('Lite'); return {mode:'lite',name,totalOrders,ids,locations:0,averageOrders:0,siteOrders:0,tables:0,glovoCount:0,boltCount:0,locoCount:0,lastMile:0,virtualBrands:0,paymentSystem:'',selectedPlan:'Lite Integration',base,oneTime,monthly,expenses,monthlyTotal,oneTimeTotal:0,services,comment,exceeded}; }
+function calculateStandard(){ syncWaiterCall(); const name=byId('venueName').value.trim(); const locations=Math.max(1,num('locations')); const totalOrders=num('orders'); const averageOrders=totalOrders/locations; const siteOrders=num('siteOrders'); const tables=num('tables'); const glovoCount=num('glovoCount'),boltCount=num('boltCount'),locoCount=num('locoCount'); const lastMile=num('lastMile'),virtualBrands=num('virtualBrands'); byId('averageOrdersPerLocation').textContent=averageOrders.toLocaleString('uk-UA',{maximumFractionDigits:1}); const selectedPlan=planByAverage(averageOrders); const plan=PLANS[selectedPlan]; const base=[],oneTime=[],monthly=[],expenses=[]; addLine(base,`Тариф ${selectedPlan}`,plan.price); [marketplaceLine('Glovo',glovoCount),marketplaceLine('Bolt',boltCount),marketplaceLine('Loco',locoCount)].filter(Boolean).forEach(x=>oneTime.push(x)); if(isChecked('setupPos'))addLine(oneTime,'Налаштування POS-інтеграції',PRICES.setup_pos); if(isChecked('menuImport'))addLine(oneTime,'Підготовка меню до імпорту',PRICES.menu_import); if(isChecked('reviewSetup'))addLine(oneTime,`Налаштування збору відгуків (${locations} локац.)`,locations*PRICES.review_setup); if(isChecked('customIntegration'))addLine(oneTime,'Індивідуальна інтеграція — попередня оцінка',PRICES.custom_integration); if(isChecked('websiteCreation'))addLine(oneTime,'Створення сайту',PRICES.site_creation); if(lastMile>0)addLine(oneTime,`Налаштування Last-mile (${lastMile})`,lastMile*PRICES.last_mile_setup); if(isChecked('waiterCall'))addLine(oneTime,'Налаштування QR-виклику офіціанта',PRICES.waiter_setup); if(isChecked('waiterCall'))addLine(monthly,`QR-виклик офіціанта (${tables} столів)`,tables*PRICES.waiter_table_month); if(isChecked('reviewBoost'))addLine(monthly,'Review Boost',PRICES.review_boost); if(lastMile>1)addLine(monthly,`Додаткові Last-mile сервіси (${lastMile-1})`,(lastMile-1)*PRICES.last_mile_extra_month); if(virtualBrands>0)addLine(monthly,`Virtual Brand (${virtualBrands})`,virtualBrands*PRICES.virtual_brand_month); if(isChecked('premiumSupport'))addLine(monthly,'Розширена підтримка',PRICES.premium_support); addLine(expenses,'SMS-повідомлення',null,`${uah(PRICES.sms)} за SMS · за фактичним використанням`); const paymentSystem=byId('paymentSystem').value; if(paymentSystem)addLine(expenses,`Комісія ${paymentSystem}`,null,'За тарифами провайдера'); if(isChecked('ownSite'))addLine(expenses,'Комісія за онлайн-замовлення через сайт',null,'Розраховується окремо'); if(isChecked('customImprovements'))addLine(expenses,'Індивідуальні доробки',null,byId('customImprovementsDetails').value.trim()||'Оцінюються окремо'); const baseTotal=base.reduce((s,x)=>s+(x.amount||0),0),oneTimeTotal=oneTime.reduce((s,x)=>s+(x.amount||0),0),monthlyExtrasTotal=monthly.reduce((s,x)=>s+(x.amount||0),0),monthlyTotal=baseTotal+monthlyExtrasTotal; updateSummaryHeader(name,selectedPlan,`${uah(plan.price)} / місяць`,monthlyTotal,oneTimeTotal); byId('baseGroupTotal').textContent=uah(baseTotal);byId('setupGroupTotal').textContent=uah(oneTimeTotal);byId('monthlyExtrasTotal').textContent=uah(monthlyExtrasTotal);byId('expensesTotal').textContent='Окремо';renderLines('baseBreakdown',base);renderLines('setupBreakdown',oneTime);renderLines('monthlyBreakdown',monthly);renderLines('expensesBreakdown',expenses); byId('inputSummary').innerHTML=[['Назва',name||'Не вказано'],['Формат','Стандартні тарифи'],['Закладів / локацій',String(locations)],['Загалом замовлень',String(totalOrders)],['Середньо на локацію',averageOrders.toLocaleString('uk-UA',{maximumFractionDigits:1})],['Замовлень через сайт',String(siteOrders)],['Столів',String(tables)],['Glovo / Bolt / Loco',`${glovoCount} / ${boltCount} / ${locoCount}`],['Платіжна система',paymentSystem||'Не обрано']].map(([a,b])=>`<li><span>${escapeHtml(a)}</span><span>${escapeHtml(b)}</span></li>`).join(''); const services=selectedServices(); updateServices(services); const comments=[byId('managerNote').value.trim()]; if(isChecked('customImprovements')&&byId('customImprovementsDetails').value.trim())comments.push(`Індивідуальні доробки: ${byId('customImprovementsDetails').value.trim()}`); const comment=comments.filter(Boolean).join('\n\n'); updateComment(comment); byId('liteLimitNotice').classList.add('hidden');byId('locationNotice').classList.toggle('hidden',locations<=2);byId('providerNotice').classList.toggle('hidden',!paymentSystem);byId('customNotice').classList.toggle('hidden',!isChecked('customImprovements'));byId('planReason').textContent=`${totalOrders.toLocaleString('uk-UA')} замовлень ÷ ${locations} локац. = ${averageOrders.toLocaleString('uk-UA',{maximumFractionDigits:1})} у середньому. Рекомендований тариф — ${selectedPlan}.`; activateTariff(selectedPlan); return {mode:'standard',name,locations,totalOrders,averageOrders,siteOrders,tables,glovoCount,boltCount,locoCount,lastMile,virtualBrands,paymentSystem,selectedPlan,base,oneTime,monthly,expenses,monthlyTotal,oneTimeTotal,services,comment}; }
+function updateSummaryHeader(name,plan,price,monthlyTotal,setupTotal){ byId('summaryVenue').textContent=name?`Розрахунок для: ${name}`:'Орієнтовний розрахунок';byId('planName').textContent=plan;byId('planPrice').textContent=price;byId('monthlyTotal').textContent=uah(monthlyTotal);byId('setupTotal').textContent=uah(setupTotal); }
+function updateServices(services){byId('selectedServices').innerHTML=services.map(s=>`<span class="service-chip">${escapeHtml(s)}</span>`).join('');byId('noServices').classList.toggle('hidden',services.length>0);}
+function updateComment(comment){byId('commentText').textContent=comment;byId('commentBlock').classList.toggle('hidden',!comment);}
+function activateTariff(name){document.querySelectorAll('[data-plan-card]').forEach(c=>c.classList.toggle('active',c.dataset.planCard===name));}
+function calculate(){setModeUI();syncCustomState();return currentMode()==='lite'?calculateLite():calculateStandard();}
+function reportText(){const r=calculate();const total=items=>items.reduce((s,x)=>s+(x.amount||0),0);const group=(title,items,withTotal=true)=>{const rows=items.length?items.map(x=>`• ${x.label}: ${x.amount===null?x.note:uah(x.amount)}`):['• Немає'];if(withTotal)rows.push(`Разом: ${uah(total(items))}`);return [title,...rows].join('\n');};const lines=['QR-меню від Smart Cafe',r.name?`Назва: ${r.name}`:'',`Формат: ${r.selectedPlan}`,`Замовлень на місяць: ${r.totalOrders}`];if(r.mode==='lite')lines.push(`Кількість ID: ${r.ids}`);else lines.push(`Локацій: ${r.locations}`,`Середньо на локацію: ${r.averageOrders.toLocaleString('uk-UA',{maximumFractionDigits:1})}`,`Замовлень через сайт: ${r.siteOrders}`,`Столів: ${r.tables}`,`Glovo / Bolt / Loco: ${r.glovoCount} / ${r.boltCount} / ${r.locoCount}`);return [...lines,'','Обрані послуги:',...(r.services.length?r.services.map(x=>`• ${x}`):['• Нічого не обрано']),'',group('Тариф:',r.base),'',group('Разові платежі:',r.oneTime),'',group('Щомісячні доплати:',r.monthly),'',group('Додаткові витрати:',r.expenses,false),'',`Орієнтовно щомісяця: ${uah(r.monthlyTotal)}`,`Разове підключення: ${uah(r.oneTimeTotal)}`,r.mode==='lite'&&r.totalOrders>200?'Увага: Lite Integration доступний лише до 200 замовлень.':'',r.mode==='standard'&&r.locations>2?'Увага: доплата за 3-тю та наступні локації не включена.':'',r.comment?`\nКоментар або запитання:\n${r.comment}`:''].filter(Boolean).join('\n');}
+async function copyReport(){const text=reportText();let copied=false;if(navigator.clipboard&&window.isSecureContext){try{await navigator.clipboard.writeText(text);copied=true}catch{}}if(!copied){const a=document.createElement('textarea');a.value=text;a.style.position='fixed';a.style.opacity='0';document.body.appendChild(a);a.select();try{copied=document.execCommand('copy')}catch{}a.remove();}if(!copied){window.prompt('Скопіюйте звіт:',text);return;}const b=byId('copyButton'),old=b.textContent;b.textContent='Скопійовано';setTimeout(()=>b.textContent=old,1500);}
+function setSummaryExpanded(expanded){byId('summary').classList.toggle('expanded',expanded);byId('summaryBackdrop').classList.toggle('active',expanded);document.body.classList.toggle('summary-open',expanded);byId('expandSummary').textContent=expanded?'×':'↗';}
+function resetCalculator(){byId('calculatorForm').reset();byId('modeStandard').checked=true;document.querySelectorAll('input[type="checkbox"]').forEach(i=>i.checked=false);byId('locations').value=1;byId('liteIds').value=1;['orders','siteOrders','tables','glovoCount','boltCount','locoCount','lastMile','virtualBrands'].forEach(id=>byId(id).value=0);byId('paymentSystem').value='';byId('managerNote').value='';byId('customImprovementsDetails').value='';calculate();byId('calculator').scrollIntoView({behavior:'smooth',block:'start'});}
+function proposalConditions(r){const items=[];if(r.mode==='standard')items.push('Тариф Small, Medium, Large або Unlimited визначається за середньою кількістю замовлень на одну локацію.');if(r.mode==='lite')items.push('Lite Integration доступний до 200 замовлень на місяць і не включає розширений функціонал.');if(r.mode==='standard'&&r.locations>2)items.push('Доплата за третю та наступні локації потребує окремого розрахунку.');if(r.paymentSystem)items.push(`Комісія ${r.paymentSystem} визначається тарифами платіжного провайдера.`);items.push(`SMS-повідомлення оплачуються за фактичним використанням — орієнтовно ${uah(PRICES.sms)} за одне SMS.`);if(r.glovoCount+r.boltCount+r.locoCount>0)items.push('Контактні дані гостя з маркетплейсів доступні лише тоді, коли це дозволяє відповідна платформа.');if(isChecked('autoConfirm')||isChecked('marketplaceFeature'))items.push('Після прийняття замовлення через маркетплейс його скасування може потребувати звернення до підтримки платформи.');if(isChecked('qrPay'))items.push('Чайові через QR працюють через платіжні плагіни ПриватБанку.');if(r.lastMile>0)items.push('Відстеження кур’єра на мапі залежить від API обраного last-mile сервісу.');if(isChecked('bonusSystem'))items.push('Відображення бонусів доступне, а розрахунок бонусів і частина сценаріїв лояльності ще допрацьовуються.');return items;}
+const PDF_W=794, PDF_H=1123, PDF_SCALE=2, PDF_MARGIN=70, PDF_BOTTOM=64;
+function makeCanvasPage(){const canvas=document.createElement('canvas');canvas.width=PDF_W*PDF_SCALE;canvas.height=PDF_H*PDF_SCALE;const ctx=canvas.getContext('2d');ctx.scale(PDF_SCALE,PDF_SCALE);ctx.fillStyle='#fff';ctx.fillRect(0,0,PDF_W,PDF_H);ctx.textBaseline='top';ctx.fillStyle='#555';ctx.font='700 12px Arial';ctx.textAlign='right';ctx.fillText('SMART CAFE',PDF_W-PDF_MARGIN,28);ctx.strokeStyle='#cfcfcf';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(PDF_MARGIN,50);ctx.lineTo(PDF_W-PDF_MARGIN,50);ctx.stroke();ctx.textAlign='left';return {canvas,ctx,y:72};}
+function createCanvasDocument(){const pages=[];let page=makeCanvasPage();pages.push(page);const contentW=PDF_W-PDF_MARGIN*2;function newPage(){page=makeCanvasPage();pages.push(page);return page;}function ensure(height){if(page.y+height>PDF_H-PDF_BOTTOM)newPage();return page;}function setFont(font,color='#202124'){page.ctx.font=font;page.ctx.fillStyle=color;page.ctx.textAlign='left';}function wrap(text,maxWidth,font){if(font)setFont(font);const paragraphs=String(text??'').split(/\n/);const lines=[];paragraphs.forEach((paragraph,pi)=>{const words=paragraph.split(/\s+/).filter(Boolean);if(!words.length){lines.push('');return;}let line='';for(const word of words){const test=line?`${line} ${word}`:word;if(page.ctx.measureText(test).width<=maxWidth)line=test;else{if(line)lines.push(line);line=word;}}if(line)lines.push(line);if(pi<paragraphs.length-1)lines.push('');});return lines;}function text(text,x,y,maxWidth,lineHeight,font='14px Arial',color='#202124'){setFont(font,color);const lines=wrap(text,maxWidth);lines.forEach((line,i)=>page.ctx.fillText(line,x,y+i*lineHeight));return y+lines.length*lineHeight;}function heading(label){ensure(42);setFont('700 21px Arial');page.ctx.fillText(label,PDF_MARGIN,page.y);page.ctx.strokeStyle='#cfcfcf';page.ctx.beginPath();page.ctx.moveTo(PDF_MARGIN,page.y+30);page.ctx.lineTo(PDF_W-PDF_MARGIN,page.y+30);page.ctx.stroke();page.y+=42;}function paragraph(value){const lines=wrap(value,contentW,'14px Arial');ensure(lines.length*18+10);page.y=text(value,PDF_MARGIN,page.y,contentW,18,'14px Arial')+8;}function title(main,subtitle,meta){setFont('700 32px Arial');page.ctx.fillText(main,PDF_MARGIN,92);page.y=138;const subLines=wrap(subtitle,contentW,'700 23px Arial');ensure(subLines.length*28+55);page.y=text(subtitle,PDF_MARGIN,page.y,contentW,28,'700 23px Arial','#4a4a4a')+12;page.y=text(meta,PDF_MARGIN,page.y,contentW,18,'14px Arial','#555')+10;page.ctx.strokeStyle='#9e9e9e';page.ctx.beginPath();page.ctx.moveTo(PDF_MARGIN,page.y);page.ctx.lineTo(PDF_W-PDF_MARGIN,page.y);page.ctx.stroke();page.y+=22;}function rowHeight(cells,widths,font='14px Arial',lineHeight=17,pad=9){let h=0;cells.forEach((c,i)=>{const lines=wrap(c,widths[i]-pad*2,font);h=Math.max(h,lines.length*lineHeight+pad*2);});return Math.max(h,34);}function drawRow(cells,widths,{header=false,bold=false,fill=null}={}){const font=(header||bold)?'700 13px Arial':'13px Arial';let h=rowHeight(cells,widths,font,16,8);if(page.y+h>PDF_H-PDF_BOTTOM){newPage();if(!header&&drawRow.lastHeader)drawRow(drawRow.lastHeader,widths,{header:true});}const x0=PDF_MARGIN;if(fill||header){page.ctx.fillStyle=fill||(header?'#ececec':'#f3f3f3');page.ctx.fillRect(x0,page.y,widths.reduce((a,b)=>a+b,0),h);}page.ctx.strokeStyle='#d0d0d0';let x=x0;cells.forEach((c,i)=>{page.ctx.strokeRect(x,page.y,widths[i],h);setFont(font);const lines=wrap(c,widths[i]-16,font);lines.forEach((line,j)=>{page.ctx.textAlign=i===cells.length-1?'right':'left';const tx=i===cells.length-1?x+widths[i]-8:x+8;page.ctx.fillText(line,tx,page.y+8+j*16);});x+=widths[i];});page.ctx.textAlign='left';page.y+=h;return h;}function table(headers,rows,totalRow=null,widths=[410,244]){ensure(50);drawRow.lastHeader=headers;drawRow(headers,widths,{header:true});rows.forEach(r=>drawRow(r,widths));if(totalRow)drawRow(totalRow,widths,{bold:true,fill:'#f3f3f3'});page.y+=10;drawRow.lastHeader=null;}function bullets(items,columns=1){const font='13px Arial',lineHeight=16;if(columns===2&&items.length>3){const gap=26,colW=(contentW-gap)/2,split=Math.ceil(items.length/2);const cols=[items.slice(0,split),items.slice(split)];const heights=cols.map(col=>col.reduce((sum,item)=>sum+wrap(item,colW-18,font).length*lineHeight+5,0));ensure(Math.max(...heights)+8);const baseY=page.y;cols.forEach((col,ci)=>{let y=baseY;const x=PDF_MARGIN+ci*(colW+gap);col.forEach(item=>{setFont(font);const lines=wrap(item,colW-18,font);page.ctx.beginPath();page.ctx.arc(x+4,y+7,2.2,0,Math.PI*2);page.ctx.fill();lines.forEach((line,j)=>page.ctx.fillText(line,x+14,y+j*lineHeight));y+=lines.length*lineHeight+5;});});page.y=baseY+Math.max(...heights)+8;}else{for(const item of items){const lines=wrap(item,contentW-20,font);ensure(lines.length*lineHeight+7);setFont(font);page.ctx.beginPath();page.ctx.arc(PDF_MARGIN+4,page.y+7,2.2,0,Math.PI*2);page.ctx.fill();lines.forEach((line,j)=>page.ctx.fillText(line,PDF_MARGIN+14,page.y+j*lineHeight));page.y+=lines.length*lineHeight+6;}page.y+=5;}}function forcePage(){newPage();}function finish(venue){const total=pages.length;pages.forEach((p,i)=>{p.ctx.fillStyle='#777';p.ctx.font='11px Arial';p.ctx.textAlign='center';p.ctx.fillText(`Комерційна пропозиція для ${venue} • ${i+1} / ${total}`,PDF_W/2,1084);p.ctx.textAlign='left';});return pages.map(p=>p.canvas);}return{title,heading,paragraph,table,bullets,forcePage,finish,get y(){return page.y},set y(v){page.y=v},ensure,text};}
+function costRows(items){return items.map(x=>[x.label,x.amount===null?x.note:uah(x.amount)]);}
+function renderProposalCanvases(r){const doc=createCanvasDocument();const date=new Date().toLocaleDateString('uk-UA');const venue=r.name||'закладу';doc.title('КОМЕРЦІЙНА ПРОПОЗИЦІЯ',`QR-меню та цифрові сервіси для ${venue}`,`Підготовлено ${date}`);doc.heading('Мета співпраці');doc.paragraph('Об’єднати цифрові канали закладу в одному рішенні Smart Cafe: синхронізувати меню з SYRVE, скоротити ручну роботу, централізувати замовлення та надати гостям зручні сценарії перегляду меню, доставки, оплати й обслуговування столу.');doc.heading('Обрана конфігурація');const params=r.mode==='lite'?[['Формат','Lite Integration'],['Кількість ID',String(r.ids)],['Замовлень на місяць',String(r.totalOrders)],['Щомісячна вартість',uah(r.monthlyTotal)]]:[['Формат',r.selectedPlan],['Кількість локацій',String(r.locations)],['Замовлень на місяць',String(r.totalOrders)],['Середньо на локацію',r.averageOrders.toLocaleString('uk-UA',{maximumFractionDigits:1})],['Замовлень через сайт',String(r.siteOrders)],['Кількість столів',String(r.tables)]];doc.table(['Параметр','Значення'],params,null,[330,324]);doc.heading('Обрані можливості та послуги');doc.bullets(r.services.length?r.services:['Базова конфігурація без додаткових модулів'],2);doc.forcePage();doc.heading('Вартість співпраці');doc.text('Щомісячні платежі',PDF_MARGIN,doc.y,654,21,'700 18px Arial');doc.y+=28;const monthly=[...r.base,...r.monthly];doc.table(['Склад пакета','Вартість'],costRows(monthly),['Загальна щомісячна вартість',uah(r.monthlyTotal)],[470,184]);doc.text('Разові платежі',PDF_MARGIN,doc.y,654,21,'700 18px Arial');doc.y+=28;doc.table(['Послуга','Вартість'],costRows(r.oneTime),['Загальна разова вартість',uah(r.oneTimeTotal)],[470,184]);if(r.expenses.length){doc.text('Додаткові витрати',PDF_MARGIN,doc.y,654,21,'700 18px Arial');doc.y+=28;doc.table(['Стаття','Умова'],costRows(r.expenses),null,[380,274]);}if(doc.y>720)doc.forcePage();doc.heading('Важливі уточнення');doc.bullets(proposalConditions(r),1);if(r.comment){doc.heading('Коментар або запитання');doc.paragraph(r.comment);}doc.heading('Наступний крок');doc.paragraph('Після підтвердження конфігурації фіксуємо перелік інтеграцій, сценарій прийняття замовлень, необхідні доступи та дату запуску.');doc.ensure(55);doc.text('З повагою,\nкоманда Smart Cafe',PDF_MARGIN,doc.y,654,19,'700 14px Arial','#444');return doc.finish(venue);}
+function canvasJpeg(canvas){const dataUrl=canvas.toDataURL('image/jpeg',0.94);return{bytes:Uint8Array.from(atob(dataUrl.split(',')[1]),c=>c.charCodeAt(0)),width:canvas.width,height:canvas.height};}
+function ascii(str){return new TextEncoder().encode(str)}
+function concatBytes(chunks){const length=chunks.reduce((s,c)=>s+c.length,0);const out=new Uint8Array(length);let pos=0;for(const c of chunks){out.set(c,pos);pos+=c.length;}return out;}
+function buildImagePdf(images){const chunks=[];const offsets=[0];let length=0;const push=b=>{chunks.push(b);length+=b.length};push(Uint8Array.from([0x25,0x50,0x44,0x46,0x2d,0x31,0x2e,0x34,0x0a,0x25,0xe2,0xe3,0xcf,0xd3,0x0a]));const addObj=(id,parts)=>{offsets[id]=length;push(ascii(`${id} 0 obj\n`));for(const p of parts)push(typeof p==='string'?ascii(p):p);push(ascii('\nendobj\n'));};const totalObjects=2+images.length*3;addObj(1,['<< /Type /Catalog /Pages 2 0 R >>']);const kids=images.map((_,i)=>`${3+i*3} 0 R`).join(' ');addObj(2,[`<< /Type /Pages /Kids [${kids}] /Count ${images.length} >>`]);images.forEach((img,i)=>{const pageId=3+i*3,imageId=pageId+1,contentId=pageId+2,name=`Im${i+1}`;addObj(pageId,[`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595.28 841.89] /Resources << /XObject << /${name} ${imageId} 0 R >> >> /Contents ${contentId} 0 R >>`]);addObj(imageId,[`<< /Type /XObject /Subtype /Image /Width ${img.width} /Height ${img.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${img.bytes.length} >>\nstream\n`,img.bytes,'\nendstream']);const content=`q\n595.28 0 0 841.89 0 0 cm\n/${name} Do\nQ`;addObj(contentId,[`<< /Length ${ascii(content).length} >>\nstream\n${content}\nendstream`]);});const xrefOffset=length;let xref=`xref\n0 ${totalObjects+1}\n0000000000 65535 f \n`;for(let i=1;i<=totalObjects;i++)xref+=`${String(offsets[i]).padStart(10,'0')} 00000 n \n`;push(ascii(xref));push(ascii(`trailer\n<< /Size ${totalObjects+1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`));return new Blob([concatBytes(chunks)],{type:'application/pdf'});}
+async function generateProposalPdfBlob(){const result=calculate();const canvases=renderProposalCanvases(result);return buildImagePdf(canvases.map(canvasJpeg));}
+function safeFilename(name){return String(name||'розрахунок').trim().replace(/[^a-zA-Z0-9а-яА-ЯіІїЇєЄґҐ_-]+/g,'_').replace(/^_+|_+$/g,'')||'розрахунок';}
+async function downloadProposalPdf(){const button=byId('downloadPdfButton'),old=button.textContent;button.disabled=true;button.textContent='Формуємо PDF…';try{const r=calculate();const blob=await generateProposalPdfBlob();const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`Комерційна_пропозиція_QR-меню_${safeFilename(r.name)}.pdf`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);}catch(error){console.error(error);alert('Не вдалося сформувати PDF. Спробуйте ще раз у Chrome або Edge.');}finally{button.disabled=false;button.textContent=old;}}
+window.generateProposalPdfBase64ForTest=async()=>{const blob=await generateProposalPdfBlob();const buf=new Uint8Array(await blob.arrayBuffer());let binary='';const chunk=0x8000;for(let i=0;i<buf.length;i+=chunk)binary+=String.fromCharCode(...buf.subarray(i,i+chunk));return btoa(binary);};
+document.querySelectorAll('input,select,textarea').forEach(el=>{el.addEventListener('input',calculate);el.addEventListener('change',calculate);});byId('waiterCall').addEventListener('change',()=>{byId('waiterCallPayment').checked=byId('waiterCall').checked;calculate();});byId('waiterCallPayment').addEventListener('change',()=>{byId('waiterCall').checked=byId('waiterCallPayment').checked;calculate();});byId('customImprovements').addEventListener('change',()=>{syncCustomState();calculate();if(isChecked('customImprovements'))byId('customImprovementsDetails').focus();});byId('copyButton').addEventListener('click',copyReport);byId('downloadPdfButton').addEventListener('click',downloadProposalPdf);byId('resetButton').addEventListener('click',resetCalculator);byId('expandSummary').addEventListener('click',()=>setSummaryExpanded(!byId('summary').classList.contains('expanded')));byId('summaryBackdrop').addEventListener('click',()=>setSummaryExpanded(false));byId('productInfoClose').addEventListener('click',closeInfo);byId('productInfoOverlay').addEventListener('click',e=>{if(e.target===byId('productInfoOverlay'))closeInfo()});document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeInfo();setSummaryExpanded(false)}});setupNumberInputs();setupInfoButtons();calculate();
+</script>
+
+<script>
+(() => {
+  const root = document.documentElement;
+  const toggle = document.getElementById("themeToggle");
+  const icon = document.getElementById("themeToggleIcon");
+
+  function applyTheme(theme, persist = false) {
+    const next = theme === "light" ? "light" : "dark";
+    root.dataset.theme = next;
+    if (persist) {
+      try {
+        localStorage.setItem("smartCafeTheme", next);
+      } catch {}
+    }
+    const dark = next === "dark";
+    if (toggle) {
+      toggle.setAttribute("aria-label", dark ? "Увімкнути світлу тему" : "Увімкнути темну тему");
+      toggle.setAttribute("title", dark ? "Світла тема" : "Темна тема");
+    }
+    if (icon) icon.textContent = dark ? "☀" : "☾";
+  }
+
+  applyTheme(root.dataset.theme);
+
+  toggle?.addEventListener("click", () => {
+    applyTheme(root.dataset.theme === "dark" ? "light" : "dark", true);
+  });
+})();
+</script>
+
+</body>
+</html>
